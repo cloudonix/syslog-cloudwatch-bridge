@@ -11,6 +11,5 @@ linux: *.go
 clean:
 	rm -f syslog-cloudwatch-bridge
 
-release: linux
-	docker build -t rjocoleman/syslog-cloudwatch-bridge .
-	docker push rjocoleman/syslog-cloudwatch-bridge
+docker-build: clean linux
+	$(BUILD_CMD) -t ${IMG} -f Dockerfile .
