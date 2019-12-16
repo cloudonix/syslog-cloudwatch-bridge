@@ -85,10 +85,6 @@ func sendToCloudWatch(logPart format.LogParts) {
 		m = logPart["content"]
 	}
 
-	log.Println(logPart)
-
-	log.Println(m)
-
 	if m == nil {
 		return
 	}
