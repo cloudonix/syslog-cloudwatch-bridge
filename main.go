@@ -59,6 +59,11 @@ func main() {
 
 	go func(channel syslog.LogPartsChannel) {
 		for logParts := range channel {
+			defer func() {
+				if recover() != nil {
+					log.Println("recoverd from panic")
+				}
+			}()
 			sendToCloudWatch(logParts)
 		}
 	}(channel)
@@ -72,10 +77,26 @@ func sendToCloudWatch(logPart format.LogParts) {
 	// set the AWS SDK to use our bundled certs for the minimal container (certs from CoreOS linux)
 	svc.Config.HTTPClient = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}}}
 
+	// rfc5424
+	m := logPart["message"]
+
+	// rfc3164
+	if m == nil {
+		m = logPart["content"]
+	}
+
+	log.Println(logPart)
+
+	log.Println(m)
+
+	if m == nil {
+		return
+	}
+
 	params := &cloudwatchlogs.PutLogEventsInput{
 		LogEvents: []*cloudwatchlogs.InputLogEvent{
 			{
-				Message:   aws.String(logPart["message"].(string)),
+				Message:   aws.String(m.(string)),
 				Timestamp: aws.Int64(makeMilliTimestamp(logPart["timestamp"].(time.Time))),
 			},
 		},
