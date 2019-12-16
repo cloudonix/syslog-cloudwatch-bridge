@@ -75,7 +75,7 @@ func sendToCloudWatch(logPart format.LogParts) {
 	params := &cloudwatchlogs.PutLogEventsInput{
 		LogEvents: []*cloudwatchlogs.InputLogEvent{
 			{
-				Message:   aws.String(logPart["content"].(string)),
+				Message:   aws.String(logPart["message"].(string)),
 				Timestamp: aws.Int64(makeMilliTimestamp(logPart["timestamp"].(time.Time))),
 			},
 		},
