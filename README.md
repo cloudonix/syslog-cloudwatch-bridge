@@ -6,7 +6,7 @@ This is a Syslog server that sends all logs received over to [AWS's CloudWatch L
 
 * Uses AWS's SDK to get credentials from the environment, credentials file or IAM Role.
 * TCP and UDP Syslog server on a configurable port (default `514`).
-* Automatic support for syslog messages in RFC3164, RFC6587 or RFC5424 formats.
+* Automatic support for syslog messages in `RFC3164`, `RFC6587` or `RFC5424` formats.
 * Configurable CloudWatch Log Group.
 * Creates a new CloudWatch Log Stream on each invocation which is persisted runtime of the server.
 * Dockerized in a minimal container (~8MB).
@@ -14,38 +14,41 @@ This is a Syslog server that sends all logs received over to [AWS's CloudWatch L
 
 ## Usage Example
 
-1. Create an IAM user that can create Log Streams and Logs e.g.
+### Create an IAM user that can create Log Streams and Logs
 
-  ```json
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": [
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-      ],
-        "Resource": [
-          "arn:aws:logs:*:*:*"
-      ]
-    }
-   ]
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+    ],
+      "Resource": [
+        "arn:aws:logs:*:*:*"
+    ]
   }
-  ```
+  ]
+}
+```
+### Create CloudWatch Log Group
 
-2. Run the bridge
+https://docs.aws.amazon.com/cli/latest/reference/logs/create-log-group.html
 
-  ```
-  $ docker run -e \
-     AWS_REGION=ap-southeast-2 \
-     AWS_ACCESS_KEY_ID=foo \
-     AWS_SECRET_ACCESS_KEY=bar \
-     LOG_GROUP_NAME=test-logger \
-     -p 5014:514 \
-     -p 5014:514/udp \
-     rjocoleman/syslog-cloudwatch-bridge
-  ```
+### Run the bridge
+
+```sh
+$ docker run \
+    -e AWS_REGION=ap-southeast-2 \
+    -e AWS_ACCESS_KEY_ID=foo \
+    -e AWS_SECRET_ACCESS_KEY=bar \
+    -e LOG_GROUP_NAME=test-logger \
+    -p 5014:514 \
+    -p 5014:514/udp \
+    quay.io/app-sre/syslog-cloudwatch-bridge
+```
 
 3. Send syslog messages to `127.0.0.1:5014`, these will be viewable in your AWS CloudWatch Logs Management console under the group called `test-logger`.
 
