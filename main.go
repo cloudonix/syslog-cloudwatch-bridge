@@ -52,18 +52,27 @@ func main() {
 	server := syslog.NewServer()
 	server.SetFormat(syslog.Automatic)
 	server.SetHandler(handler)
-	server.ListenUDP(address)
-	server.ListenTCP(address)
 
-	server.Boot()
+	err := server.ListenUDP(address)
+
+	if err != nil {
+		log.Fatalf("failed to listen on udp address %v due to error: %v", address, err)
+	}
+
+	err = server.ListenTCP(address)
+
+	if err != nil {
+		log.Fatalf("failed to listen on udp address %v due to error: %v", address, err)
+	}
+
+	err = server.Boot()
+
+	if err != nil {
+		log.Fatalf("failed to boot due to error: %v", err)
+	}
 
 	go func(channel syslog.LogPartsChannel) {
 		for logParts := range channel {
-			defer func() {
-				if recover() != nil {
-					log.Println("recoverd from panic")
-				}
-			}()
 			sendToCloudWatch(logParts)
 		}
 	}(channel)
@@ -72,17 +81,24 @@ func main() {
 }
 
 func sendToCloudWatch(logPart format.LogParts) {
+
+	defer func() {
+		if recover() != nil {
+			log.Println("recoverd from panic in sendToCloudWatch")
+		}
+	}()
+
 	// service is defined at run time to avoid session expiry in long running processes
 	var svc = cloudwatchlogs.New(session.New())
 	// set the AWS SDK to use our bundled certs for the minimal container (certs from CoreOS linux)
 	svc.Config.HTTPClient = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}}}
 
-	// rfc5424
-	m := logPart["message"]
-
 	// rfc3164
+	m := logPart["content"]
+
+	// rfc5424
 	if m == nil {
-		m = logPart["content"]
+		m = logPart["message"]
 	}
 
 	if m == nil {
