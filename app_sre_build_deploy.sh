@@ -15,7 +15,7 @@ GIT_HASH=`git rev-parse --short=7 HEAD`
 # build the image
 BUILD_CMD="docker build" IMG="$IMG" make docker-build
 
-# push the image
+# push the image to quay
 skopeo copy --dest-creds "${QUAY_USER}:${QUAY_TOKEN}" \
     "docker-daemon:${IMG}" \
     "docker://${QUAY_IMAGE}:latest"
@@ -24,23 +24,14 @@ skopeo copy --dest-creds "${QUAY_USER}:${QUAY_TOKEN}" \
     "docker-daemon:${IMG}" \
     "docker://${QUAY_IMAGE}:${GIT_HASH}"
 
+# push the image to a backup repository
+BACKUP_BASE_IMG="${BASE_IMAGE}-backup"
+BACKUP_IMAGE="${BACKUP_URL}/${BACKUP_BASE_IMG}"
 
-export DOCKER_CONF="$PWD/.docker"
-mkdir -p "${DOCKER_CONF}"
-
-# login to the backup repository
-aws ecr get-login \
-    --region ${AWS_REGION} --no-include-email | \
-    sed 's/docker/docker --config="$DOCKER_CONF"/g' | \
-    /bin/bash
-
-# push the image
-skopeo copy \
-    --authfile "$DOCKER_CONF/config.json" \
+skopeo copy --dest-creds "${BACKUP_USER}:${BACKUP_TOKEN}" \
     "docker-daemon:${IMG}" \
-    "docker://${BACKUP_REPO_URL}:latest"
+    "docker://${BACKUP_IMAGE}:latest"
 
-skopeo copy \
-    --authfile "$DOCKER_CONF/config.json" \
+skopeo copy --dest-creds "${BACKUP_USER}:${BACKUP_TOKEN}" \
     "docker-daemon:${IMG}" \
-    "docker://${BACKUP_REPO_URL}:${GIT_HASH}"
+    "docker://${BACKUP_IMAGE}:${GIT_HASH}"
