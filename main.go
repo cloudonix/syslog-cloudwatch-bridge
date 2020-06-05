@@ -149,9 +149,6 @@ func sendToCloudWatch(buffer []format.LogParts) {
 			return
 		}
 
-		// write log message to stdout
-		log.Printf("%v", m.(string))
-
 		params.LogEvents = append(params.LogEvents, &cloudwatchlogs.InputLogEvent{
 			Message:   aws.String(m.(string)),
 			Timestamp: aws.Int64(makeMilliTimestamp(logPart["timestamp"].(time.Time))),
