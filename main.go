@@ -9,9 +9,11 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	uuid "github.com/satori/go.uuid"
@@ -163,6 +165,17 @@ func sendToCloudWatch(buffer []format.LogParts) {
 	resp, err := svc.PutLogEvents(params)
 	if err != nil {
 		log.Println(err)
+		if awsErr, ok := err.(awserr.Error); ok {
+			// Get error details
+			code := awsErr.Code()
+			if code == cloudwatchlogs.ErrCodeInvalidSequenceTokenException {
+				// Extract expected Sequence from the message
+				tokens := strings.Split(awsErr.Message(), ":")
+				if len(tokens) > 1 {
+					sequenceToken = strings.TrimSpace(tokens[1])
+				}
+			}
+		}
 	}
 	log.Printf("Pushed %v entries to CloudWatch", len(buffer))
 
