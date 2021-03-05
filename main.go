@@ -168,7 +168,7 @@ func sendToCloudWatch(buffer []format.LogParts) {
 		if awsErr, ok := err.(awserr.Error); ok {
 			// Get error details
 			code := awsErr.Code()
-			if code == "InvalidSequenceTokenException" {
+			if code == cloudwatchlogs.ErrCodeInvalidSequenceTokenException {
 				// Extract expected Sequence from the message
 				tokens := strings.Split(awsErr.Message(), ":")
 				if len(tokens) > 1 {
