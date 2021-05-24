@@ -25,7 +25,7 @@ import (
 
 var port = os.Getenv("PORT")
 var logGroupName = os.Getenv("LOG_GROUP_NAME")
-var streamName = os.Getenv("STREAM_NAME")
+var streamName = ""
 var sequenceToken = ""
 var tickerTime = os.Getenv("TICKER_TIME")
 
@@ -48,16 +48,7 @@ func main() {
 		port = "514"
 	}
 
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		log.Fatalf("failed to generate UUID due to error: %v", err)
-	}
-
-	if streamName == "" {
-		streamName = uuid.String()
-	} else {
-		streamName = streamName + "-" + uuid.String()
-	}
+	streamName = makeStreamName()
 
 	address := fmt.Sprintf("0.0.0.0:%v", port)
 	log.Println("Starting syslog server on: ", address)
@@ -72,7 +63,7 @@ func main() {
 	server := syslog.NewServer()
 	server.SetFormat(syslog.Automatic)
 	server.SetHandler(handler)
-	err = server.ListenUDP(address)
+	err := server.ListenUDP(address)
 	if err != nil {
 		log.Fatalf("failed to listen on udp address %v due to error: %v", address, err)
 	}
@@ -165,6 +156,12 @@ func sendToCloudWatch(buffer []format.LogParts) {
 				if len(tokens) > 1 {
 					sequenceToken = strings.TrimSpace(tokens[1])
 				}
+			} else if code == cloudwatchlogs.ErrCodeResourceNotFoundException {
+				sequenceToken = ""
+				streamName = makeStreamName()
+				initCloudWatchStream()
+				sendToCloudWatch(buffer)
+				return
 			} else { // unexpected error - request token and hope for the best
 				log.Printf("Unexpected error: %v", code)
 				sequenceToken = ""
@@ -200,6 +197,20 @@ func initCloudWatchStream() {
 
 func makeMilliTimestamp(input time.Time) int64 {
 	return input.UnixNano() / int64(time.Millisecond)
+}
+
+func makeStreamName() string {
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		log.Fatalf("failed to generate UUID due to error: %v", err)
+	}
+
+	streamName := os.Getenv("STREAM_NAME")
+	if streamName == "" {
+		return uuid.String()
+	} else {
+		return streamName + "-" + uuid.String()
+	}
 }
 
 //Receives the logParts map and returns the string message in format <hostname> <tag/app_name> [<proc_id>]: <content>
