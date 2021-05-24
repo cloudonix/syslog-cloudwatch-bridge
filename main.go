@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"bytes"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -139,22 +140,12 @@ func sendToCloudWatch(buffer []format.LogParts) {
 	})
 
 	for _, logPart := range buffer {
-		// rfc3164
-		m := logPart["content"]
-
-		// rfc5424
-		if m == nil {
-			m = logPart["message"]
+		if m, ok := formatMessageContent(logPart); ok {
+			params.LogEvents = append(params.LogEvents, &cloudwatchlogs.InputLogEvent{
+				Message:   aws.String(m),
+				Timestamp: aws.Int64(makeMilliTimestamp(logPart["timestamp"].(time.Time))),
+			})
 		}
-
-		if m == nil {
-			return
-		}
-
-		params.LogEvents = append(params.LogEvents, &cloudwatchlogs.InputLogEvent{
-			Message:   aws.String(m.(string)),
-			Timestamp: aws.Int64(makeMilliTimestamp(logPart["timestamp"].(time.Time))),
-		})
 	}
 
 	// first request has no SequenceToken - in all subsequent request we set it
@@ -209,4 +200,40 @@ func initCloudWatchStream() {
 
 func makeMilliTimestamp(input time.Time) int64 {
 	return input.UnixNano() / int64(time.Millisecond)
+}
+
+//Receives the logParts map and returns the string message in format <hostname> <tag/app_name> [<proc_id>]: <content>
+func formatMessageContent(message format.LogParts) (result string, ok bool) {
+	var buffer bytes.Buffer
+	content := message["message"]
+	if content == nil || content == " " {
+		content = message["content"]
+	}
+	if content == nil || content == "" {
+		return "", false
+	}
+	if message["hostname"] != nil && message["hostname"] != "" {
+		buffer.WriteString(message["hostname"].(string))
+		buffer.WriteString(" ")
+	}
+	if message["tag"] != nil && message["tag"] != "" {
+		buffer.WriteString(message["tag"].(string))
+	} else if message["app_name"] != nil && message["app_name"] != "" {
+		buffer.WriteString(message["app_name"].(string))
+	} else {
+		buffer.WriteString("-")
+	}
+	buffer.WriteString(" ")
+	pid := message["proc_id"]
+	if pid == nil || pid == "" || pid == "-" {
+		pid = message["pid"]
+	}
+	if pid != nil && pid != "" && pid != "-" {
+		buffer.WriteString("[")
+		buffer.WriteString(pid.(string))
+		buffer.WriteString("]:")
+		buffer.WriteString(" ")
+	}
+	buffer.WriteString(message["message"].(string))
+	return buffer.String(), true
 }
