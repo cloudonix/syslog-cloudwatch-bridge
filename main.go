@@ -174,13 +174,19 @@ func sendToCloudWatch(buffer []format.LogParts) {
 				if len(tokens) > 1 {
 					sequenceToken = strings.TrimSpace(tokens[1])
 				}
+			} else { // unexpected error - request token and hope for the best
+				log.Printf("Unexpected error: %v", code)
+				sequenceToken = ""
 			}
+		} else { // unrecognized error - request token and hope for the best
+			sequenceToken = ""
 		}
-	}
-	log.Printf("Pushed %v entries to CloudWatch", len(buffer))
+	} else {
+		log.Printf("Pushed %v entries to CloudWatch", len(buffer))
 
-	sequenceToken = *resp.NextSequenceToken
-	log.Printf("NextSequenceToken: %v", sequenceToken)
+		sequenceToken = *resp.NextSequenceToken
+		log.Printf("NextSequenceToken: %v", sequenceToken)
+	}
 }
 
 func initCloudWatchStream() {
