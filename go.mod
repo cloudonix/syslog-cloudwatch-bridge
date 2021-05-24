@@ -9,5 +9,5 @@ require (
 	github.com/stretchr/testify v1.6.1 // indirect
 	golang.org/x/net v0.0.0-20200602114024-627f9648deb9 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
+	gopkg.in/cloudonix/go-syslog.v3 v3.0.3
 )

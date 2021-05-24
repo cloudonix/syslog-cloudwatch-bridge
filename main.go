@@ -19,8 +19,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	uuid "github.com/satori/go.uuid"
 
-	"gopkg.in/mcuadros/go-syslog.v2"
-	"gopkg.in/mcuadros/go-syslog.v2/format"
+	"gopkg.in/cloudonix/go-syslog.v3"
+	"gopkg.in/cloudonix/go-syslog.v3/format"
 )
 
 var port = os.Getenv("PORT")
