@@ -1,6 +1,6 @@
-.PHONY: build linux clean
+.PHONY: build linux clean deps
 
-all: build
+all: deps build
 
 build:
 	go build
@@ -13,3 +13,6 @@ clean:
 
 docker-build: clean linux
 	$(BUILD_CMD) -t ${IMG} -f Dockerfile .
+
+deps:
+	go get -d -v ./...
