@@ -1,8 +1,9 @@
 FROM golang as builder
 WORKDIR /workspace
-COPY go.mod ./
-RUN go mod download -x
-COPY *.go ./
+COPY go.mod go.sum *.go ./
+#RUN go mod download -x
+RUN go mod tidy
+#COPY *.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o syslog-cloudwatch-bridge .
 
 FROM scratch

@@ -1,0 +1,25 @@
+name: Deploy to Quay
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    environment: quay
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag quay.io/cloudonix/syslog-cloudwatch-bridge
+    - name: Login to quay
+      env:
+        USERNAME: ${{ secrets.USERNAME }}
+        PASSWORD: ${{ secrets.PASSWORD }}
+      run: docker login -u $USERNAME --password-stdin quay.io <<<"$PASSWORD"
+    - name: Push to quay
+      run: docker push quay.io/cloudonix/syslog-cloudwatch-bridge
