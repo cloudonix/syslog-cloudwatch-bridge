@@ -15,12 +15,19 @@ jobs:
     environment: quay
     steps:
     - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag quay.io/cloudonix/syslog-cloudwatch-bridge
+    - name: Set up Docker Buildx
+      run: |
+      docker buildx create --use
+    - name: Set date
+      id: date
+      run: echo "::set-output name=date::$(date +'%m-%d-%Y')"
     - name: Login to quay
       env:
         USERNAME: ${{ secrets.USERNAME }}
         PASSWORD: ${{ secrets.PASSWORD }}
       run: docker login -u $USERNAME --password-stdin quay.io <<<"$PASSWORD"
-    - name: Push to quay
-      run: docker push quay.io/cloudonix/syslog-cloudwatch-bridge
+    - name: Build the Docker image
+      #run: docker build . --file Dockerfile --tag quay.io/cloudonix/syslog-cloudwatch-bridge
+      run: docker buildx build --file Dockerfile --platform linux/arm64,linux/amd64 \
+        --tag quay.io/cloudonix/syslog-cloudwatch-bridge:${{ steps.date.outputs.date }} \
+        --push .
