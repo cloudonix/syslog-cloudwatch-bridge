@@ -28,6 +28,4 @@ jobs:
       run: docker login -u $USERNAME --password-stdin quay.io <<<"$PASSWORD"
     - name: Build the Docker image
       #run: docker build . --file Dockerfile --tag quay.io/cloudonix/syslog-cloudwatch-bridge
-      run: docker buildx build --file Dockerfile --platform linux/arm64,linux/amd64 \
-        --tag quay.io/cloudonix/syslog-cloudwatch-bridge:${{ steps.date.outputs.date }} \
-        --push .
+      run: docker buildx build --file Dockerfile --platform linux/arm64,linux/amd64 --tag quay.io/cloudonix/syslog-cloudwatch-bridge:${{ steps.date.outputs.date }} --push .
